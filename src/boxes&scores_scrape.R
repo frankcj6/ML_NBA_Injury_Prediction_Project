@@ -1,6 +1,4 @@
 
-setwd("E:/NYU/2019FALL/Messy Data and Machine Learning/")
-
 library(tidyverse)
 library(lubridate)
 library(rvest)
@@ -187,7 +185,7 @@ extract_game <- function(csk){
 tbl <- lapply(date_team,extract_game)
 tbl <- bind_rows(tbl)
 
-write_csv(tbl,'finalProject/data/player.csv')
+write_csv(tbl,'data/processed/player.csv')
 
 
 
