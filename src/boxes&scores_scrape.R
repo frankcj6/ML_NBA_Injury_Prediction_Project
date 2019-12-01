@@ -1,3 +1,5 @@
+# scrape websites to get boxes & scores (player stats)
+# setwd('~/MDML_Final_Project')
 
 library(tidyverse)
 library(lubridate)

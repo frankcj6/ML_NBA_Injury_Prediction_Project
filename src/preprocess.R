@@ -1,3 +1,5 @@
+# preprocess data for further analysis
+
 library(tidyverse)
 
 ### add distance to game data and split data into two datasets, for home and away ###

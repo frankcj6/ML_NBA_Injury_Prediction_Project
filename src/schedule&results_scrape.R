@@ -1,4 +1,5 @@
-setwd("E:/NYU/2019FALL/Messy Data and Machine Learning/")
+# scrape websites to get schedule & results (match information and results)
+# setwd('~/MDML_Final_Project')
 
 library(tidyverse)
 library(lubridate)
@@ -67,6 +68,6 @@ for(i in seq(year)){
   }
 }
 
-write_csv(tbl,'finalProject/data/game.csv')
+write_csv(tbl,'data/processed/game.csv')
 
 
