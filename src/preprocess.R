@@ -157,6 +157,9 @@ injury_record <- injury_record %>%
 player_injury <- player %>% 
   left_join(injury_record) %>% 
   mutate(injury = case_when(is.na(injury)==TRUE ~ 0,
-                            injury==1 ~ 1)) %>% 
+                            injury==1 ~ 1))
+# adjust column order
+player_injury <- player_injury %>% 
   select(date, team, player, home, injury, names(player_injury)[-c(2,37,38,39,40)])
 
+write_csv(player_injury, path = 'data/processed/player_injury.csv')
