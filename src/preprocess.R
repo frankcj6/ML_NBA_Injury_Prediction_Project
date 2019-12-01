@@ -53,7 +53,14 @@ write_csv(game_home, path = 'data/processed/game_home.csv')
 write_csv(game_away, path = 'data/processed/game_away.csv')
 
 ### convert player stats to game level for winning probability analysis ###
-player <- read_csv('data/processed/player.csv')
+player <- read.csv('data/processed/player.csv')
+player <- player %>% 
+  mutate(mp = minute(ms(as.character(mp)))+second(ms(as.character(mp)))/60)
+player <- as.tibble(player) %>% 
+  filter(is.na(mp)==FALSE) %>% 
+  mutate(player = as.character(player),
+         team = as.character(team),
+         date = as.Date(date))
 
 player_game_level <- player %>% 
   group_by(date, team, home) %>% 
