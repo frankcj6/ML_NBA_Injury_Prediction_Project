@@ -1,4 +1,5 @@
 # preprocess data for further analysis
+# setwd('~/MDML_Final_Project')
 
 library(tidyverse)
 
