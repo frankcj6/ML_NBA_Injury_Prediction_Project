@@ -2,10 +2,15 @@
 # setwd('~/MDML_Final_Project')
 
 library(tidyverse)
+library(lubridate)
 library(ggplot2)
 library(ggpubr)
 library(ROCR)
-set.seed(2048)
+library(randomForest)
+library(ranger)
+library(caret)
+
+set.seed(1024)
 
 ### CONVERT DATA TO DESIRED FORMAT ###
 
@@ -46,25 +51,55 @@ player_injury <- player_injury %>%
 # select relevant variables
 player_injury_rel <- player_injury %>% 
   select(season, player, date, injury, home, starters, names(player_injury)[42:ncol(player_injury)]) %>% 
-  filter(is.na(home_last)==FALSE)
+  filter(is.na(home_last)==FALSE,
+         is.na(mean_off_rtg_before)==FALSE,
+         is.na(mean_def_rtg_before)==FALSE,
+         is.na(off_rtg_last)==FALSE,
+         is.na(def_rtg_last)==FALSE)
 
 ### DEVELOP PREDICTION MODEL ###
-player_injury_train <- player_injury_rel %>% sample_frac(.8)
+
+player_injury_train <- player_injury_rel %>% sample_frac(.7)
 player_injury_test <- player_injury_rel %>% anti_join(player_injury_train)
 
-formula <- "injury~home+starters+month+num_match_before+mean_starter_before+mean_min_before+
-mean_pts_before+mean_trb_before+mean_pf_before+mean_off_rtg_before+mean_def_rtg_before+
-starter_last+min_last+pts_last+trb_last+pf_last+off_rtg_last+def_rtg_last+home_last"
+model2 <- ranger(
+  injury~home+starters+month+num_match_before+mean_starter_before+mean_min_before+
+    mean_pts_before+mean_trb_before+mean_pf_before+mean_off_rtg_before+mean_def_rtg_before+
+    starter_last+min_last+pts_last+trb_last+pf_last+off_rtg_last+def_rtg_last+home_last, 
+  data = player_injury_train,
+  num.trees = 1000,
+  importance = 'impurity'
+)
 
-model_injury <- glm(formula, data = player_injury_train, family = 'binomial')
-summary(model_injury)
-
-predicted_prob = predict(model_injury, player_injury_test, type = 'response')
-perf <- prediction(predicted_prob, player_injury_test$injury)
+# performace
+player_injury_test$predicted_prob = predict(model2, player_injury_test, type = 'response')$predictions
+perf <- prediction(player_injury_test$predicted_prob, player_injury_test$injury)
 auc <- performance(perf, "auc")
 auc <- auc@y.values[[1]]
 auc
 
+# make performance plot
+
+player_injury_test$predicted_prob = predict(model2, player_injury_test, type = 'response')$predictions
+
+plot.data <- player_injury_test[,c('injury','predicted_prob')]
+plot.data <- plot.data %>% 
+  arrange( desc(predicted_prob) ) %>%
+  mutate(numcheck = row_number(), percent.injury = cumsum( injury )/sum( injury ),
+         checks = numcheck/n()) %>% select(injury, checks, percent.injury)
+
+theme_set(theme_bw())
+p <- ggplot(data=plot.data, aes(x=checks, y=percent.injury)) + 
+  geom_line() +
+  scale_y_continuous("Percent of injury recovered", limits=c(0, 1), labels=scales::percent)
+p
+
+ggsave(plot=p, file='figures/performance_plot.png', height=5, width=5)
+
+
 ### RECOMMENDATION ###
 
-
+# importance plot
+imp <- ranger::importance(model2)
+imp <- imp[order(imp)]
+dotchart(imp)
