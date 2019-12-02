@@ -9,7 +9,8 @@ library(tidyverse)
 # assumption: we use direct distance here, assume that players travel by airplanes
 game <- read_csv('data/processed/game.csv')
 game <- game %>% 
-  select(-game_id, -game_start_time, -overtimes, -game_remarks)
+  select(-game_id, -game_start_time, -overtimes, -game_remarks) %>% 
+  filter(date_game > '2016-10-25' & date_game < '2018-6-13')
 distance.data = read.csv('data/raw/distance') %>% 
   mutate(team_name = as.character(team_name))
 
@@ -25,13 +26,20 @@ calculate_distance <- function(long1, lati1, long2, lati2){
   R*c
 }
 
+# add win/loss variable
+game <- game %>% 
+  mutate(home_win = case_when(home_pts > visitor_pts ~ 1,
+                              home_pts < visitor_pts ~ 0),
+         visitor_win = 1-home_win)
+
 # we develop two datasets for two models instead of developing one model
 # data for home teams, distance = 0
 game_home <- game %>% 
   mutate(team_name = home_team_name,
          distance = 0,
-         pts = home_pts) %>% 
-  select(date_game, team_name, pts, game_type, attendance, distance)
+         pts = home_pts,
+         win = home_win) %>% 
+  select(date_game, team_name, pts, game_type, attendance, distance, win)
 
 # data for visitor teams
 game_away <- game
@@ -46,8 +54,9 @@ game_away <- game_away %>%
   mutate(distance = calculate_distance(visitor_long, visitor_lati,
                                        home_long, home_lati),
          team_name = visitor_team_name,
-         pts = visitor_pts) %>% 
-  select(date_game, team_name, pts, game_type, attendance, distance)
+         pts = visitor_pts,
+         win = visitor_win) %>% 
+  select(date_game, team_name, pts, game_type, attendance, distance, win)
 
 write_csv(game_home, path = 'data/processed/game_home.csv')
 write_csv(game_away, path = 'data/processed/game_away.csv')
@@ -64,8 +73,7 @@ player <- as.tibble(player) %>%
 
 player_game_level <- player %>% 
   group_by(date, team, home) %>% 
-  summarise(mp.mean = mean(mp, na.rm = TRUE),
-            fg.total = sum(fg, na.rm = TRUE),
+  summarise(fg.total = sum(fg, na.rm = TRUE),
             fga.total = sum(fga, na.rm = TRUE),
             fg_pct.mean = mean(fg_pct, na.rm = TRUE),
             fg3.total = sum(fg3, na.rm = TRUE),
@@ -85,6 +93,7 @@ player_game_level <- player %>%
             pts.total = sum(pts, na.rm = TRUE),
             plus_minus.mean = mean(plus_minus, na.rm = TRUE),
             ts_pct.mean = mean(ts_pct, na.rm = TRUE),
+            efg_pct.mean = mean(efg_pct, na.rm = TRUE),
             fg3a_per_fga_pct.mean = mean(fg3a_per_fga_pct, na.rm = TRUE),
             fta_per_fga_pct.mean = mean(fta_per_fga_pct, na.rm = TRUE),
             orb_pct.mean = mean(orb_pct, na.rm = TRUE),
