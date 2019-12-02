@@ -178,7 +178,19 @@ auc2 <- performance(perf, "auc")
 auc2 <- auc2@y.values[[1]]
 auc2
 
-
-
+# visualize winning probability
+model_home <- glm(formula_home, data = game_home, family = 'binomial')
+game_home$winning_prob <- predict(model_home, game_home, type = 'response')
+model_away <- glm(formula_away, data = game_away, family = 'binomial')
+game_away$winning_prob <- predict(model_away, game_away, type = 'response')
+plot.data <- rbind(game_home, game_away) %>% 
+  group_by(team, home) %>% 
+  summarise(win_prob_mean = mean(winning_prob, na.rm=TRUE))
+p_wp <- ggplot(plot.data, aes(x=team, y=win_prob_mean, color = as.factor(home))) +
+  geom_point() + 
+  scale_x_discrete(labels=c(1:30)) +
+  guides(color = guide_legend(title = "home"))
+  
+ggsave(plot=p_wp, file='figures/winning_prob.png', width = 10, height = 5)
 
 
