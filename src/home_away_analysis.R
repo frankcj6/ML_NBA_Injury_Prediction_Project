@@ -5,12 +5,21 @@ library(tidyverse)
 library(ggplot2)
 library(ggpubr)
 library(ROCR)
+library(lubridate)
 
 ### READ AND JOIN DATA ###
 
 game_away <- read_csv('data/processed/game_away.csv')
 game_home <- read_csv('data/processed/game_home.csv')
 player_game_level <- read_csv('data/processed/player_game_level.csv')
+player <- read.csv('data/processed/player.csv')
+player <- player %>% 
+  mutate(mp = minute(ms(as.character(mp)))+second(ms(as.character(mp)))/60)
+player <- as.tibble(player) %>% 
+  filter(is.na(mp)==FALSE) %>% 
+  mutate(player = as.character(player),
+         team = as.character(team),
+         date = as.Date(date))
 
 game_away <- game_away %>% 
   rename(date = date_game,
@@ -62,7 +71,7 @@ p2.4 <- ggplot(plot.data, aes(x=as.factor(home), y=efg_pct.mean)) +
 p2 <- ggarrange(p2.1,p2.2,p2.3,p2.4)
 ggsave(plot=p2,file='figures/p2_field_goal_efficiency.png', width = 10, height = 8)
 
-# exploratory research 3: any difference in rebonds?
+# exploratory research 3: any difference in rebounds?
 p3.1 <- ggplot(plot.data, aes(x=as.factor(home), y=orb.total)) +
   geom_boxplot() +
   labs(x='home')
@@ -122,7 +131,7 @@ p5.4 <- ggplot(plot.data, aes(x=as.factor(home), y=usg_pct.mean)) +
 p5 <- ggarrange(p5.1,p5.2,p5.3,p5.4, ncol=2, nrow=2)
 ggsave(plot=p5, file='figures/p5_strategy.png', width = 10, height = 8)
 
-# exploratory research 6: any difference in energy?
+# exploratory research 6: any difference in stamina?
 starter_mp <- player %>%
   filter(starters==1) %>% 
   group_by(date,team) %>% 
@@ -138,7 +147,7 @@ mean(game_away$starter_min)
 p6 <- ggplot(plot.data, aes(x=as.factor(home), y=starter_min)) +
   geom_boxplot() +
   labs(x='home')
-ggsave(plot=p6, file='figures/p6_starter_energy.png', width = 5, height = 5)
+ggsave(plot=p6, file='figures/p6_starter_stamina.png', width = 5, height = 5)
 
 
 ### DEVELOP LOGISTIC REGRESSION MODEL ###

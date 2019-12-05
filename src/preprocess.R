@@ -2,6 +2,7 @@
 # setwd('~/MDML_Final_Project')
 
 library(tidyverse)
+library(lubridate)
 
 ### add distance to game data and split data into two datasets, for home and away ###
 ### matches respectively                                                          ###
